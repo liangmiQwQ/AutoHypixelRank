@@ -3,8 +3,6 @@ package net.mirolls.autohypixelrank.mixin;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.text.Text;
-import net.minecraft.network.message.MessageType;
-import net.minecraft.network.packet.c2s.play.ChatMessageC2SPacket;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -12,9 +10,25 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import java.util.Objects;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+
 @Mixin(ClientPlayNetworkHandler.class)
 
-public class ClientChatMixin {
+public abstract class ClientChatMixin implements ClientChatAccessor{
+
+//    @Shadow public abstract void sendChatCommand(String command);
+
+    @Unique
+    private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+
+    @Unique
+    private boolean isTimerStart = false;
+
+
     @Inject(method = "sendChatMessage", at = @At("HEAD"), cancellable = true)
     private void onSendChatMessage(String message, CallbackInfo ci) {
         // 检查消息是否以*开头
@@ -26,7 +40,6 @@ public class ClientChatMixin {
             ClientPlayerEntity player = MinecraftClient.getInstance().player;
             if (player != null) {
                 // 执行自定义代码，例如发送反馈消息
-//                player.sendMessage(Text.literal("不能发送以*开头的消息"), new Object(), player.getUuid());
                 player.sendMessage(Text.literal("不能发送以*开头的消息"));
                 executeCustomCode(player, message);
             }
@@ -35,9 +48,38 @@ public class ClientChatMixin {
 
     @Unique
     private void executeCustomCode(ClientPlayerEntity player, String message) {
-        // 在这里执行你的自定义代码
-        // 例如：给玩家发送一条消息
-        player.sendMessage(Text.literal("不能发送以*开头的消息"));
-//        player.sendMessage(Text.literal("你触发了自定义代码：" + message), MessageType.SYSTEM, player.getUuid());
+        String[] splitMessage = message.trim().split("\\s+");
+        if (splitMessage.length != 2){
+            player.sendMessage(Text.literal("[操作失败] 命令缺少了参数"));
+        }else{
+            if(Objects.equals(splitMessage[1], "start")){
+                if (isTimerStart){
+                    player.sendMessage(Text.literal("[操作成功] 开启了 自动获取Ranks"));
+                    isTimerStart = true;
+                    ClientPlayNetworkHandler networkHandler = MinecraftClient.getInstance().getNetworkHandler();
+                    if (networkHandler != null) {
+                        networkHandler.sendChatCommand("/ac Good Evening everyone");
+                    }else{
+                        return;
+                    }
+                    networkHandler.sendChatCommand("/ac Good Evening everyone");
+                    scheduler.scheduleAtFixedRate(()->{
+                        networkHandler.sendChatCommand("/ac Good Evening everyone");
+                    },0, 4, TimeUnit.SECONDS);
+                }else{
+                    player.sendMessage(Text.literal("[操作失败] 自动获取Ranks 已经被开启了"));
+                }
+            } else if (Objects.equals(splitMessage[1], "stop")) {
+                if (isTimerStart) {
+                    player.sendMessage(Text.literal("[操作成功] 关闭了 自动获取Ranks"));
+                    scheduler.shutdownNow();
+                    isTimerStart = false;
+                }else{
+                    player.sendMessage(Text.literal("[操作失败] 目前 自动获取Ranks 还未开启"));
+                }
+            }else{
+                player.sendMessage(Text.literal("[操作失败] 未知的参数"));
+            }
+        }
     }
 }
