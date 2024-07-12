@@ -2,7 +2,8 @@ package net.mirolls.autohypixelrank.client;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.util.InputUtil;
+
+import java.lang.reflect.Method;
 
 public class Move {
     public static void moveForwardForOneSecond() {
@@ -34,7 +35,8 @@ public class Move {
         MinecraftClient client = MinecraftClient.getInstance();
         if (client.player != null) {
             // 模拟按下按键
-            KeyBinding.onKeyPressed(InputUtil.fromTranslationKey(keyBinding.getTranslationKey()));
+//            pressKey(keyBinding, true);
+            KeyBinding.setKeyPressed(keyBinding.getDefaultKey(), true);
 
             // 启动一个新线程在1秒后松开按键
             new Thread(() -> {
@@ -44,9 +46,20 @@ public class Move {
                     e.printStackTrace();
                 } finally {
                     // 模拟松开按键
-                    KeyBinding.setKeyPressed(InputUtil.fromTranslationKey(keyBinding.getTranslationKey()), false);
+                    KeyBinding.setKeyPressed(keyBinding.getDefaultKey(), false);
+//                    pressKey(keyBinding, false);
                 }
             }).start();
+        }
+    }
+
+    private static void pressKey(KeyBinding keyBinding, boolean pressed) {
+        try {
+            Method method = KeyBinding.class.getDeclaredMethod("setPressed", boolean.class);
+            method.setAccessible(true);
+            method.invoke(keyBinding, pressed);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }

@@ -62,7 +62,9 @@ public class SendMessage {
         //先处理nrank
         String nrank = "MVP+";
         String rank = RankStore.getPlayerRank();
-        if (rank.equalsIgnoreCase("VIP")){
+        if (rank.equalsIgnoreCase("DEFAULT")){
+            nrank = "VIP+";
+        }else if (rank.equalsIgnoreCase("VIP")){
             nrank = "VIP+";
         } else if (rank.equalsIgnoreCase("VIP+")) {
             nrank = "MVP";

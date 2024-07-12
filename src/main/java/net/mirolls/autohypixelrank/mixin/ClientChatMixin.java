@@ -2,15 +2,12 @@ package net.mirolls.autohypixelrank.mixin;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.util.InputUtil;
 import net.minecraft.network.packet.s2c.play.GameMessageS2CPacket;
 import net.minecraft.text.Text;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.mirolls.autohypixelrank.client.Move;
 import net.mirolls.autohypixelrank.message.SendMessage;
 import net.mirolls.autohypixelrank.store.RankStore;
-import org.apache.logging.log4j.core.appender.rolling.action.IfAll;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -22,6 +19,7 @@ import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 
 @Mixin(ClientPlayNetworkHandler.class)
@@ -31,7 +29,7 @@ public abstract class ClientChatMixin implements ClientChatAccessor{
 //    @Shadow public abstract void sendChatCommand(String command);
 
     @Unique
-    private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+    private static ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     @Unique
     private boolean isTimerStart = false;
@@ -48,7 +46,6 @@ public abstract class ClientChatMixin implements ClientChatAccessor{
             ClientPlayerEntity player = MinecraftClient.getInstance().player;
             if (player != null) {
                 // 执行自定义代码，例如发送反馈消息
-                player.sendMessage(Text.literal("不能发送以*开头的消息"));
                 executeCustomCode(player, message);
             }
         }
@@ -61,24 +58,41 @@ public abstract class ClientChatMixin implements ClientChatAccessor{
         if (client.player != null) {
             String msgText = packet.content().getString();
 
-            // 检查消息格式是否包含Rank信息
-            if ((msgText.contains("[VIP]") || msgText.contains("[MVP]") || msgText.contains("[MVP+]") || msgText.contains("[MVP++]"))
-                    && msgText.contains(client.player.getGameProfile().getName() + ":")) {
+            msgText = removeColorCodes(msgText);
 
+            // 检查消息格式是否包含Rank信息
+            if (msgText.contains("[VIP]") && msgText.contains(client.player.getGameProfile().getName() + ":")){
                 // 从消息中提取玩家的Rank信息
-                String rankInfo = msgText.substring(0, msgText.indexOf(client.player.getGameProfile().getName() + ":")).trim();
-                rankInfo = rankInfo.substring(1, rankInfo.length() - 1);
-                RankStore.setPlayerRank(rankInfo); // 存储Rank信息
-            }else{
+                RankStore.setPlayerRank("VIP"); // 存储Rank信息
+                client.player.sendMessage(Text.of("发现了rank为" + "VIP" + "并且已经存储"));
+            } else if (msgText.contains("[VIP+]") && msgText.contains(client.player.getGameProfile().getName() + ":")) {
+                RankStore.setPlayerRank("VIP+"); // 存储Rank信息
+                client.player.sendMessage(Text.of("发现了rank为" + "VIP+" + "并且已经存储"));
+            } else if (msgText.contains("[MVP]") && msgText.contains(client.player.getGameProfile().getName() + ":")) {
+                RankStore.setPlayerRank("MVP"); // 存储Rank信息
+                client.player.sendMessage(Text.of("发现了rank为" + "MVP" + "并且已经存储"));
+            } else if (msgText.contains("[MVP+]") && msgText.contains(client.player.getGameProfile().getName() + ":")) {
+                RankStore.setPlayerRank("MVP+"); // 存储Rank信息
+                client.player.sendMessage(Text.of("发现了rank为" + "MVP+" + "并且已经存储"));
+            } else if (msgText.contains("[MVP++]") && msgText.contains(client.player.getGameProfile().getName() + ":")) {
+                RankStore.setPlayerRank("MVP+"); // 存储Rank信息
+                client.player.sendMessage(Text.of("发现了rank为" + "MVP++" + "并且已经存储"));
+            } else{
                 RankStore.setPlayerRank("DEFAULT");
             }
         }
     }
 
     @Unique
+    private String removeColorCodes(String input) {
+        return Pattern.compile("§.").matcher(input).replaceAll("");
+    }
+
+    @Unique
     private void executeCustomCode(ClientPlayerEntity player, String message) {
         String[] splitMessage = message.trim().split("\\s+");
         if (splitMessage.length != 2){
+            Move.moveForwardForOneSecond();
             player.sendMessage(Text.literal("[操作失败] 命令缺少了参数"));
         }else{
             if(Objects.equals(splitMessage[1], "start")){
@@ -87,9 +101,7 @@ public abstract class ClientChatMixin implements ClientChatAccessor{
                     player.sendMessage(Text.literal("[操作成功] 开启了 自动获取Ranks"));
                     isTimerStart = true;
                     ClientPlayNetworkHandler networkHandler = MinecraftClient.getInstance().getNetworkHandler();
-                    if (networkHandler != null) {
-                        SendMessage.sendRankMessage(networkHandler);
-                    }else{
+                    if (networkHandler == null) {
                         return;
                     }
                     scheduler.scheduleAtFixedRate(()->{
@@ -117,6 +129,8 @@ public abstract class ClientChatMixin implements ClientChatAccessor{
                 if (isTimerStart) {
                     player.sendMessage(Text.literal("[操作成功] 关闭了 自动获取Ranks"));
                     scheduler.shutdownNow();
+                    // re-init
+                    scheduler = Executors.newScheduledThreadPool(1);
                     isTimerStart = false;
                 }else{
                     player.sendMessage(Text.literal("[操作失败] 目前 自动获取Ranks 还未开启"));
