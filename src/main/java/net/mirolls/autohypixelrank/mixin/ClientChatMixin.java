@@ -2,8 +2,11 @@ package net.mirolls.autohypixelrank.mixin;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
+import net.minecraft.network.packet.s2c.play.GameMessageS2CPacket;
 import net.minecraft.text.Text;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
+import net.mirolls.autohypixelrank.message.SendMessage;
+import net.mirolls.autohypixelrank.store.RankStore;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -46,6 +49,27 @@ public abstract class ClientChatMixin implements ClientChatAccessor{
         }
     }
 
+    @Inject(method = "onGameMessage", at = @At("HEAD"))
+    private void onGameMessage(GameMessageS2CPacket packet, CallbackInfo ci) {
+        MinecraftClient client = MinecraftClient.getInstance();
+
+        if (client.player != null) {
+            String msgText = packet.content().getString();
+
+            // 检查消息格式是否包含Rank信息
+            if ((msgText.contains("[VIP]") || msgText.contains("[MVP]") || msgText.contains("[MVP+]") || msgText.contains("[MVP++]"))
+                    && msgText.contains(client.player.getGameProfile().getName() + ":")) {
+
+                // 从消息中提取玩家的Rank信息
+                String rankInfo = msgText.substring(0, msgText.indexOf(client.player.getGameProfile().getName() + ":")).trim();
+                rankInfo = rankInfo.substring(1, rankInfo.length() - 1);
+                RankStore.setPlayerRank(rankInfo); // 存储Rank信息
+            }else{
+                RankStore.setPlayerRank("DEFAULT");
+            }
+        }
+    }
+
     @Unique
     private void executeCustomCode(ClientPlayerEntity player, String message) {
         String[] splitMessage = message.trim().split("\\s+");
@@ -59,14 +83,13 @@ public abstract class ClientChatMixin implements ClientChatAccessor{
                     isTimerStart = true;
                     ClientPlayNetworkHandler networkHandler = MinecraftClient.getInstance().getNetworkHandler();
                     if (networkHandler != null) {
-                        networkHandler.sendChatCommand("/ac Good Evening everyone");
+                        SendMessage.sendRankMessage(networkHandler);
                     }else{
                         return;
                     }
-                    networkHandler.sendChatCommand("/ac Good Evening everyone");
                     scheduler.scheduleAtFixedRate(()->{
-                        networkHandler.sendChatCommand("/ac Good Evening everyone");
-                    },0, 4, TimeUnit.SECONDS);
+                        SendMessage.sendRankMessage(networkHandler);
+                    },0, 12, TimeUnit.SECONDS);
                 }else{
                     player.sendMessage(Text.literal("[操作失败] 自动获取Ranks 已经被开启了"));
                 }
