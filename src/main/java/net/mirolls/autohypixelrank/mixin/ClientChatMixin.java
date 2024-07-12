@@ -53,7 +53,8 @@ public abstract class ClientChatMixin implements ClientChatAccessor{
             player.sendMessage(Text.literal("[操作失败] 命令缺少了参数"));
         }else{
             if(Objects.equals(splitMessage[1], "start")){
-                if (isTimerStart){
+                if (!isTimerStart){
+                    // 如果isTimerStart是假的，意味着没有开启计时器，需要开启计时器，所以!isTimerStart是真，下面代码运行
                     player.sendMessage(Text.literal("[操作成功] 开启了 自动获取Ranks"));
                     isTimerStart = true;
                     ClientPlayNetworkHandler networkHandler = MinecraftClient.getInstance().getNetworkHandler();
