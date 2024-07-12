@@ -2,11 +2,15 @@ package net.mirolls.autohypixelrank.mixin;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
+import net.minecraft.client.option.KeyBinding;
+import net.minecraft.client.util.InputUtil;
 import net.minecraft.network.packet.s2c.play.GameMessageS2CPacket;
 import net.minecraft.text.Text;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
+import net.mirolls.autohypixelrank.client.Move;
 import net.mirolls.autohypixelrank.message.SendMessage;
 import net.mirolls.autohypixelrank.store.RankStore;
+import org.apache.logging.log4j.core.appender.rolling.action.IfAll;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -14,6 +18,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.Objects;
+import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -89,6 +94,21 @@ public abstract class ClientChatMixin implements ClientChatAccessor{
                     }
                     scheduler.scheduleAtFixedRate(()->{
                         SendMessage.sendRankMessage(networkHandler);
+
+                        Random rand = new Random();
+                        int randomMove = rand.nextInt(100);
+                        if(randomMove > 50 && randomMove <= 60){ // 向前移动
+                            Move.moveForwardForOneSecond();
+                        } else if (randomMove > 60 && randomMove <= 70) {//向后移动
+                            Move.moveBackwardForOneSecond();
+                        } else if (randomMove > 70 && randomMove <= 80) {//向左移动
+                            Move.moveLeftForOneSecond();
+                        } else if (randomMove > 80 && randomMove <= 90) {//向右移动
+                            Move.moveRightForOneSecond();
+                        }else{//跳跃
+                            Move.jumpForOneSecond();
+                        }
+
                     },0, 12, TimeUnit.SECONDS);
                 }else{
                     player.sendMessage(Text.literal("[操作失败] 自动获取Ranks 已经被开启了"));
