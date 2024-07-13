@@ -19,12 +19,19 @@ public class SendMessage {
             "${nrank}${nrank}${nrank}${nrank}${nrank}",
             "I really want ${nrank}",
             "OK? I really want ${nrank}",
-            "someone please give me ${nrank}"
+            "someone please give me ${nrank}",
+            "I'm looking forward to ${nrank}",
+            "It would be great to have ${nrank}",
+            "I would appreciate ${nrank}"
     };
 
     static final String[] SECOND_MESSAGES = {
             "I really don't have enough money",
             "I really need help",
+            "I'm currently unable to afford it",
+            "I'm hoping for some assistance",
+            "Any support would be appreciated",
+            "I would be grateful for any help"
     };
 
     static final String[] THIRD_MESSAGES = {
@@ -39,7 +46,13 @@ public class SendMessage {
             "ajuhygtjbkhluiotyufjgvhbj",
             "9y8tuygvhbj nmklpoi8yutgbh",
             "uytrcfq[ayhf",
-            "7t6rtdcfgvhbjnklopokl"
+            "7t6rtdcfgvhbjnklopokl",
+            "I would be thankful",
+            "Your help means a lot",
+            "I appreciate your kindness",
+            "Thank you for considering",
+            "Much appreciated",
+            "Your generosity is valued"
     };
 
     static final String[] SPECIAL_S_MESSAGES = { //搭配pls/plz并且s和z循环的
@@ -50,9 +63,9 @@ public class SendMessage {
     };
 
     static final String[] SPECIAL_SINGLE_MESSAGES = {
-            "plzzzzzz ${nrankk}",
-            "plsssss ${nrankk}",
-            "pls ${nrankk}",
+            "plzzzzzz ${nrank}",
+            "plsssss ${nrank}",
+            "pls ${nrank}",
             "plzzz ${nrank}",
             "can anyone upgrade my rank?",
             "can anyone upgrade my rank pleaseplease",
@@ -69,7 +82,10 @@ public class SendMessage {
             "这里真的能求得到rank吗",
             "啊啊啊啊啊啊啊啊啊啊啊啊啊啊来个${nrank}",
             "求求了真的需要一个${nrank}",
-            "感谢义父，给个${nrank}吧呜呜呜"
+            "感谢义父，给个${nrank}吧呜呜呜",
+            "各位大佬们，求一个${nrank}，孩子真的很需要",
+            "求一个${nrank}，真的会非常感激",
+            "感谢各位好心人，求一个${nrank}"
     };
 
     public static void sendRankMessage(ClientPlayNetworkHandler networkHandler){
